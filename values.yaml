@@ -1,0 +1,35 @@
+replicaCount: 2
+
+image:
+  repository: nginx
+  tag: stable
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: alb
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internal
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-2:582683034382:certificate/9525c53b-6f25-44e2-9863-7c262f92deda"
+    alb.ingress.kubernetes.io/actions.ssl-redirect: >
+      {"Type": "redirect", "RedirectConfig": { "Protocol": "HTTPS", "Port": "443", "StatusCode": "HTTP_301"}}
+    alb.ingress.kubernetes.io/load-balancer-attributes: "access_logs.s3.enabled=false"
+    external-dns.alpha.kubernetes.io/hostname: alb.core.dcli.com
+  hosts:
+    - host: alb.core.dcli.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: alb-tls
+      hosts:
+        - alb.core.dcli.com
+
+serviceAccount:
+  name: nginx-sa
